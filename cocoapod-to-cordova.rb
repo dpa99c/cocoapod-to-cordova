@@ -74,7 +74,8 @@ class CocoapodToCordovaBuilder
   #    product: { name: 'libmypod.a', sub_dir: 'lib'},
   #    localization: 'es',
   #    headers: { exclude: ['header-1.h', 'header-5.h'] },
-  #    resources: { sub_dir: 'assets' }
+  #    resources: { sub_dir: 'assets' },
+  #    preserve_config_xml: true
   #  })
   #
   def configure(options)
@@ -91,7 +92,10 @@ class CocoapodToCordovaBuilder
   #  build.update_plugin!
   #
   def update_plugin!
-    reset_xml
+    if !@config[:preserve_config_xml]
+      reset_xml
+    end
+
     include_frameworks @config[:frameworks] || {}
     include_headers @config[:headers] || {}
 

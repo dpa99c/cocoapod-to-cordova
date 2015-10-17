@@ -83,12 +83,20 @@ CocoapodToCordovaBuilder#configure can take a number of options
     # Exclude this framework
     frameworks: { exclude: ['Foundation.framework'] },
     # Exclude this resource and copy the rest to 'destination/assets'
-    resources: { sub_dir: 'assets', exclude: ['other-img.png'] }
+    resources: { sub_dir: 'assets', exclude: ['other-img.png'] },
+    # Preserves existing auto-generated entries in the plugin.xml (allows multiple pods to be specified in Podfile)
+    preserve_config_xml: true
   })
 ```
 ## Cordova Notes
  * Cordova plugins will fail to install if there is a filename conflict between the existing cordova project and the incomming plugin. If a generated plugin fails to install when installing with `cordova plugin add ...`, then add the conflicting files to the appropriate `exclude` section of the build configuration.
  * Localization files (en.lproj, es.lproj, etc) will always result in file name conflicts. This tool handles them specifically; by excluding them from the resources and only copying the specified .lproj's contained files into the project. See `localization` in `configure`
+ 
+## cocoapods gem version
+
+The included Gemfile explicitly fixes the version of the `cocoapods` gem to `0.37.0`. This is because the interface to the `installer` object was changed in a backward incompatible way in `0.38.0`, so raises errors when running this script. 
+
+TODO: Update the script and Podfile example to work with new interface and unfix version of `cocoapods` in Gemfile
 
 ## Examples
 This tool was extracted from [Cordova-DBCamera](https://github.com/vulume/Cordova-DBCamera).
@@ -168,4 +176,30 @@ And the generated plugin.xml
     <source-file framework='true' src='src/ios/vendor/libdbcamera.a' autogen='true'/>
   </platform>
 </plugin>
+```
+
+### Multiple pods
+
+```ruby
+platform :ios, '7.0'
+
+pod 'Donky-Core-SDK'
+pod 'AFNetworking'
+
+post_install do |installer|
+  require './cocoapod-to-cordova'
+
+  build = CocoapodToCordovaBuilder.new('Donky-Core-SDK', installer.project)
+  build.root_path = File.expand_path(File.join('.', '../..'))
+  build.destination = 'src/ios/vendor'
+  build.update_plugin!
+
+  build = CocoapodToCordovaBuilder.new('AFNetworking', installer.project)
+  build.root_path = File.expand_path(File.join('.', '../..'))
+  build.destination = 'src/ios/vendor'
+  build.configure({
+    preserve_config_xml: true
+  })
+  build.update_plugin!
+end
 ```
